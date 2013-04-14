@@ -30,9 +30,11 @@ sample 以下の Makefile に例があります。
 1. raspbian 用 toolchain (arm-linux-gnueabihf) をインストール
 2. 実機上の /opt/vc を開発環境のどこかにコピー 
 
-    $ ./configure --prefix=/path/to/install --host=arm-linux-gnueabihf --enable-png --enable-jpeg --enable-freetype --with-includes=/path/to/vc/include:/path/to/vc/include/interface/vcos/pthreads:/path/to/otherlibs/include:/path/to/otherlibs/include/freetype2
-    $ make
-    $ make install
+<pre>
+$ ./configure --prefix=/path/to/install --host=arm-linux-gnueabihf --enable-png --enable-jpeg --enable-freetype --with-includes=/path/to/vc/include:/path/to/vc/include/interface/vcos/pthreads:/path/to/otherlibs/include:/path/to/otherlibs/include/freetype2
+$ make
+$ make install
+</pre>
 
 ライセンス
 ----------
