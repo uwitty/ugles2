@@ -10,7 +10,7 @@ ugles2 は、OpenGL ES 2 を使用するための小さなライブラリです�
 * libjpeg (option)
 * freetype (option)
 
-※ configure 時に使用するライブラリを選択した場合
+※ configure 時に使用するライブラリを選択可
 
 
 ビルド
@@ -30,16 +30,17 @@ sample 以下の Makefile に例があります。
 1. raspbian 用 toolchain (arm-linux-gnueabihf) をインストール
 2. 実機上の /opt/vc を開発環境のどこかにコピー 
 
-<pre>
-$ ./configure --prefix=/path/to/install --host=arm-linux-gnueabihf --enable-png --enable-jpeg --enable-freetype --with-includes=/path/to/vc/include:/path/to/vc/include/interface/vcos/pthreads:/path/to/otherlibs/include:/path/to/otherlibs/include/freetype2
-$ make
-$ make install
-</pre>
+    $ ./configure --prefix=/path/to/install --host=arm-linux-gnueabihf --enable-png --enable-jpeg --enable-freetype --with-includes=/path/to/vc/include:/path/to/vc/include/interface/vcos/pthreads:/path/to/otherlibs/include:/path/to/otherlibs/include/freetype2
+    $ make
+    $ make install
 
 ライセンス
 ----------
 
 ### ugles2
+
+<pre>
+ugles2
 
 The MIT License
 
@@ -62,6 +63,7 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+</pre>
 
 ### sample/platform/mesa_x.c
 
