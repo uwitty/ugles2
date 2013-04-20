@@ -50,11 +50,11 @@ void init_shader(struct ugles2_context* context, struct app_data* app_data)
 	const char fshader_src[] =
 		"precision mediump float;\n"
 		"varying   vec2  v_texture;\n"
-		"uniform sampler2D u_texture;\n"
-		"void main()        \n"
-		"{                  \n"
+		"uniform   sampler2D u_texture;\n"
+		"void main()\n"
+		"{\n"
 		"  gl_FragColor = texture2D(u_texture,vec2(v_texture.s,v_texture.t));\n"
-		"}                  \n";
+		"}\n";
 
 	GLuint program = ugles2_compile_program(vshader_src, fshader_src);
 	glUseProgram(program);
@@ -84,21 +84,13 @@ void init_projection(struct ugles2_context* context, struct app_data* app_data)
 
 void init_triangle(struct ugles2_context* context, struct app_data* app_data, const char texture_filename[])
 {
-#if 1
+	float aspect = context->height / (float)context->width;
 	float vertices[] = {
 		// x   y                                                  z     s     t
-		-0.5f, -0.5f * (context->height / (float)context->width), 0.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f * (context->height / (float)context->width), 0.0f, 1.0f, 0.0f,
-		 0.0f,  0.5f * (context->height / (float)context->width), 0.0f, 0.5f, 1.0f,
+		-0.5f, -0.5f * aspect, 0.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f * aspect, 0.0f, 1.0f, 0.0f,
+		 0.0f,  0.5f * aspect, 0.0f, 0.5f, 1.0f,
 	};
-#else
-	float vertices[] = {
-		// x   y                                                  z     s     t
-		-0.5f, -0.5f * (context->height / (float)context->width), 0.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f * (context->height / (float)context->width), 0.0f, 1.0f, 0.0f,
-		 0.0f,  0.5f * (context->height / (float)context->width), 0.0f, 0.5f, 1.0f,
-	};
-#endif
 	unsigned short indices[] = { 0, 1, 2 };
 
 	// buffer
@@ -133,12 +125,13 @@ void init_triangle(struct ugles2_context* context, struct app_data* app_data, co
 
 void init_text(struct ugles2_context* context, struct app_data* app_data, const char text[])
 {
+	float aspect = (context->height / (float)context->width);
 	float vertices[] = {
 		// x   y                                                  z     s     t
-		-0.5f, -0.5f * (context->height / (float)context->width), 0.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f * (context->height / (float)context->width), 0.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f * (context->height / (float)context->width), 0.0f, 1.0f, 1.0f,
-		-0.5f,  0.5f * (context->height / (float)context->width), 0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f * aspect, 0.0f, 0.0f, 0.0f,
+		 0.5f, -0.5f * aspect, 0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f * aspect, 0.0f, 1.0f, 1.0f,
+		-0.5f,  0.5f * aspect, 0.0f, 0.0f, 1.0f,
 	};
 	unsigned short indices[] = { 0, 1, 3, 2 };
 
@@ -268,27 +261,35 @@ void finalize(struct ugles2_context* context, struct app_data* app_data)
 	glDeleteProgram(app_data->shader.program);
 }
 
-int main(int argc, char *argv[])
+static ugles2_open_platform get_open_platform_func(EGLint** config_attr)
 {
-	fprintf(stderr, "%s started. \n", argv[0]);
-
-	struct ugles2_context context;
-
 #if defined(MESA_X)
-	ugles2_open_platform open_platform = ugles2_platform_mesa_x_open;
-	GLint* config_attr = NULL;
+	if (config_attr != NULL) {
+		*config_attr = NULL;
+	}
+	return ugles2_platform_mesa_x_open;
 #elif defined(RASPBERRYPI)
-	ugles2_open_platform open_platform = ugles2_platform_raspberrypi_open;
-	EGLint config_attr[] =
+	static EGLint attr[] =
 	{
 		EGL_RED_SIZE, 8, EGL_GREEN_SIZE,8, EGL_BLUE_SIZE, 8,
 		EGL_ALPHA_SIZE, 8,
 		EGL_DEPTH_SIZE, 24,
 		EGL_NONE
 	};
+	*config_attr = attr;
+	return ugles2_platform_raspberrypi_open;
 #else
 #error unknown platform
 #endif
+}
+
+int main(int argc, char *argv[])
+{
+	fprintf(stderr, "%s started. \n", argv[0]);
+
+	struct ugles2_context context;
+	GLint* config_attr = NULL;
+	ugles2_open_platform open_platform = get_open_platform_func(&config_attr);
 
 	if (ugles2_initialize(&context, open_platform, config_attr) != 0) {
 		printf("ugles2_initialize() failed. \n");
