@@ -86,7 +86,7 @@ void init_triangle(struct ugles2_context* context, struct app_data* app_data, co
 {
 	float aspect = context->height / (float)context->width;
 	float vertices[] = {
-		// x   y                                                  z     s     t
+		// x   y               z     s     t
 		-0.5f, -0.5f * aspect, 0.0f, 0.0f, 0.0f,
 		 0.5f, -0.5f * aspect, 0.0f, 1.0f, 0.0f,
 		 0.0f,  0.5f * aspect, 0.0f, 0.5f, 1.0f,
@@ -127,7 +127,7 @@ void init_text(struct ugles2_context* context, struct app_data* app_data, const 
 {
 	float aspect = (context->height / (float)context->width);
 	float vertices[] = {
-		// x   y                                                  z     s     t
+		// x   y               z     s     t
 		-0.5f, -0.5f * aspect, 0.0f, 0.0f, 0.0f,
 		 0.5f, -0.5f * aspect, 0.0f, 1.0f, 0.0f,
 		 0.5f,  0.5f * aspect, 0.0f, 1.0f, 1.0f,
