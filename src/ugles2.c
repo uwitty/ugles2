@@ -679,6 +679,11 @@ static FT_ULong get_charcode(const unsigned char s[], const char** next)
 int ugles2_set_font(struct ugles2_context* context, const char file[])
 {
 #if defined(USE_FREETYPE)
+	if (context->face != NULL) {
+		FT_Done_Face(context->face);
+		context->face = NULL;
+	}
+
 	FT_Face face;
 	int res = FT_New_Face(context->library, file, 0, &face);
 	if (res == 0) {
