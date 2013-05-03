@@ -4,14 +4,6 @@
 #include <GLES2/gl2.h>
 #include <EGL/egl.h>
 
-#if defined(USE_PNG)
-#include <png.h>
-#endif
-
-#if defined(USE_JPEG)
-#include "jpeglib.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
