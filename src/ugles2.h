@@ -17,6 +17,9 @@
 #include FT_FREETYPE_H
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 struct ugles2_platform {
 	NativeWindowType window;
@@ -86,6 +89,10 @@ void ugles2_matrix_rotate_z(float m[], float degree);
 void ugles2_matrix_position(float m[], float x, float y, float z);
 void ugles2_matrix_frustrum(float m[], float l, float r, float b, float t, float n, float f);
 void ugles2_matrix_perspective(float m[], float fovy, float aspect, float near, float far);
+
+#ifdef __cplusplus
+}	// end of extern "C" {
+#endif
 
 #endif
 
