@@ -17,6 +17,12 @@
 #include "ft2build.h"
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
+
+struct freetype_context
+{
+	FT_Library library;
+	FT_Face face;
+};
 #endif
 
 static int init_context(struct ugles2_context* context, struct ugles2_platform* platform, const GLint config_attr[]);
@@ -27,9 +33,17 @@ int ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_
 	memset(context, 0, sizeof(struct ugles2_context));
 
 #if defined(USE_FREETYPE)
-	if (FT_Init_FreeType(&context->library) != 0) {
+	struct freetype_context* ft = (struct freetype_context*)malloc(sizeof(struct freetype_context));
+	if (ft == NULL) {
 		return -1;
 	}
+	memset(ft, 0, sizeof(*ft));
+
+	if (FT_Init_FreeType(&ft->library) != 0) {
+		free(ft);
+		return -1;
+	}
+	context->freetype = (void*)ft;
 #endif
 
 	// initialize platform (native window)
@@ -74,7 +88,12 @@ void ugles2_finalize(struct ugles2_context* context)
 	context->platform = NULL;
 
 #if defined(USE_FREETYPE)
-	FT_Done_FreeType(context->library);
+	if (context->freetype != NULL) {
+		struct freetype_context* ft = (struct freetype_context*)context->freetype;
+		FT_Done_FreeType(ft->library);
+		free(ft);
+		context->freetype = NULL;
+	}
 #endif
 }
 
@@ -679,15 +698,20 @@ static FT_ULong get_charcode(const unsigned char s[], const char** next)
 int ugles2_set_font(struct ugles2_context* context, const char file[])
 {
 #if defined(USE_FREETYPE)
-	if (context->face != NULL) {
-		FT_Done_Face(context->face);
-		context->face = NULL;
+	if (context->freetype == NULL) {
+		return -1;
+	}
+	struct freetype_context* ft = (struct freetype_context*)context->freetype;
+
+	if (ft->face != NULL) {
+		FT_Done_Face(ft->face);
+		ft->face = NULL;
 	}
 
 	FT_Face face;
-	int res = FT_New_Face(context->library, file, 0, &face);
+	int res = FT_New_Face(ft->library, file, 0, &face);
 	if (res == 0) {
-		context->face = face;
+		ft->face = face;
 		return 0;
 	} else if (res == FT_Err_Unknown_File_Format) {
 		return -2;
@@ -707,14 +731,20 @@ static int draw_text(struct ugles2_context* context
 		, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha
 		, int x, int y)
 {
-	if (context->face == NULL) {
+	if (context->freetype == NULL) {
 		return -1;
 	}
 
-	//FT_Set_Char_Size(context->face, 0, 16*64, width, height);
-	FT_Set_Pixel_Sizes(context->face, 0, font_size);
+	struct freetype_context* ft = (struct freetype_context*)context->freetype;
 
-	FT_GlyphSlot slot = context->face->glyph;
+	if (ft->face == NULL) {
+		return -1;
+	}
+
+	//FT_Set_Char_Size(ft->face, 0, 16*64, width, height);
+	FT_Set_Pixel_Sizes(ft->face, 0, font_size);
+
+	FT_GlyphSlot slot = ft->face->glyph;
 	const char *s = text;
 	int count = 0;
 	int w = 0;
@@ -724,9 +754,9 @@ static int draw_text(struct ugles2_context* context
 			break;
 		}
 
-		int glyph_index = FT_Get_Char_Index(context->face, charcode);
-		FT_Load_Glyph(context->face, glyph_index, FT_LOAD_DEFAULT);
-		if (FT_Render_Glyph(context->face->glyph, FT_RENDER_MODE_NORMAL) != 0) {
+		int glyph_index = FT_Get_Char_Index(ft->face, charcode);
+		FT_Load_Glyph(ft->face, glyph_index, FT_LOAD_DEFAULT);
+		if (FT_Render_Glyph(ft->face->glyph, FT_RENDER_MODE_NORMAL) != 0) {
 			printf("FT_Render_Glyph() failed. \n");
 			break;
 		}

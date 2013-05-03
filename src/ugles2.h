@@ -12,11 +12,6 @@
 #include "jpeglib.h"
 #endif
 
-#if defined(USE_FREETYPE)
-#include "ft2build.h"
-#include FT_FREETYPE_H
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,10 +38,7 @@ struct ugles2_context {
 	int width;
 	int height;
 
-#if defined(USE_FREETYPE)
-	FT_Library library;
-	FT_Face face;
-#endif
+	void* freetype;
 };
 
 typedef int (*ugles2_open_platform)(struct ugles2_platform* platform, void* arg);
