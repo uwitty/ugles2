@@ -8,8 +8,8 @@ MESA_UGLES2_LIB = $(UGLES2_HOST_DIR)/lib/libugles2.a
 
 RASPBERRYPI_SRCS = main.c platform/raspberrypi.c
 RASPBERRYPI_UGLES2_LIB = $(UGLES2_RASPBERRYPI_DIR)/lib/libugles2.a
-RASPBERRYPI_VC_DIR = /usr/local/gcc-linaro-arm-linux-gnueabihf-raspbian/vc
-RASPBERRYPI_LIB_DIR = /usr/local/gcc-linaro-arm-linux-gnueabihf-raspbian/dev
+RASPBERRYPI_VC_DIR = /opt/gcc-linaro-arm-linux-gnueabihf-raspbian/vc
+RASPBERRYPI_LIB_DIR = /opt/gcc-linaro-arm-linux-gnueabihf-raspbian/usr
 
 #all: raspberrypi
 all: mesa_x
@@ -20,7 +20,7 @@ mesa_x: $(MESA_SRCS) $(MESA_UGLES2_LIB)
 
 raspberrypi: $(RASPBERRYPI_SRCS) $(RASPBERRYPI_UGLES2_LIB)
 	cd build-ugles2/raspberrypi && make all install
-	arm-linux-gnueabihf-gcc -DRASPBERRYPI -I/usr/local/gcc-linaro-arm-linux-gnueabihf-raspbian/vc/include -I/usr/local/gcc-linaro-arm-linux-gnueabihf-raspbian/vc/include/interface/vcos/pthreads $(RASPBERRYPI_SRCS) $(RASPBERRYPI_UGLES2_LIB) -L/usr/local/gcc-linaro-arm-linux-gnueabihf-raspbian/vc/lib -L/usr/local/gcc-linaro-arm-linux-gnueabihf-raspbian/dev/lib -lGLESv2 -lEGL -lbcm_host -lm -lvcos -lvchiq_arm -lpng -ljpeg -lz -lfreetype -lpthread -lm -o $@
+	arm-linux-gnueabihf-gcc -DRASPBERRYPI -I$(RASPBERRYPI_VC_DIR)/include -I$(RASPBERRYPI_VC_DIR)/include/interface/vcos/pthreads $(RASPBERRYPI_SRCS) $(RASPBERRYPI_UGLES2_LIB) -L$(RASPBERRYPI_VC_DIR)/lib -L$(RASPBERRYPI_LIB_DIR)/lib -lGLESv2 -lEGL -lbcm_host -lm -lvcos -lvchiq_arm -lpng -ljpeg -lz -lfreetype -lpthread -lm -o $@
 
 clean:
 	rm -rf mesa_x build-ugles2 ugles2 raspberrypi
