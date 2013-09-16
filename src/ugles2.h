@@ -19,6 +19,7 @@ struct ugles2_platform {
 
 struct ugles2_context {
 	EGLDisplay  display;
+	EGLConfig   config;
 	EGLContext  context;
 	EGLSurface  surface;
 	EGLint      major_version;
@@ -35,8 +36,8 @@ struct ugles2_context {
 
 typedef int (*ugles2_open_platform)(struct ugles2_platform* platform, void* arg);
 
-// initialize / finailize
-int  ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_platform, const GLint config_attr[]);
+// initialize / finalize
+int  ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_platform, void* open_platform_arg, const GLint config_attr[]);
 void ugles2_finalize(struct ugles2_context* context);
 
 // shaders

@@ -28,7 +28,7 @@ struct freetype_context
 static int init_context(struct ugles2_context* context, struct ugles2_platform* platform, const GLint config_attr[]);
 static void close_platform(struct ugles2_platform* platform);
 
-int ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_platform, const GLint config_attr[])
+int ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_platform, void* open_platform_arg, const GLint config_attr[])
 {
 	memset(context, 0, sizeof(struct ugles2_context));
 
@@ -47,20 +47,27 @@ int ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_
 #endif
 
 	// initialize platform (native window)
-	struct ugles2_platform* platform = (struct ugles2_platform*)malloc(sizeof(struct ugles2_platform));
-	if (platform == NULL) {
-		return -1;
-	}
-	memset(platform, 0, sizeof(struct ugles2_platform));
+	if (open_platform != NULL) {
+		struct ugles2_platform* platform = (struct ugles2_platform*)malloc(sizeof(struct ugles2_platform));
+		if (platform == NULL) {
+			return -1;
+		}
+		memset(platform, 0, sizeof(struct ugles2_platform));
 
-	if (open_platform(platform, NULL) != 0) {
-		free(platform);
-		return -1;
-	}
+		if (open_platform(platform, open_platform_arg) != 0) {
+			free(platform);
+			return -1;
+		}
 
-	if (init_context(context, platform, config_attr) != 0) {
-		close_platform(platform);
-		return -1;
+		if (init_context(context, platform, config_attr) != 0) {
+			close_platform(platform);
+			free(platform);
+			return -1;
+		}
+	} else {
+		if (init_context(context, NULL, config_attr) != 0) {
+			return -1;
+		}
 	}
 
 	return 0;
@@ -83,9 +90,11 @@ void ugles2_finalize(struct ugles2_context* context)
 		context->display = EGL_NO_DISPLAY;
 	}
 
-	close_platform(context->platform);
-	free(context->platform);
-	context->platform = NULL;
+	if (context->platform != NULL) {
+		close_platform(context->platform);
+		free(context->platform);
+		context->platform = NULL;
+	}
 
 #if defined(USE_FREETYPE)
 	if (context->freetype != NULL) {
@@ -123,13 +132,26 @@ int init_context(struct ugles2_context* context, struct ugles2_platform* platfor
 		EGL_NONE
 	};
 
+	EGLint default_attrs[] = {
+		EGL_WIDTH, 960,
+		EGL_HEIGHT, 540,
+		//EGL_LARGEST_PBUFFER, EGL_TRUE,
+		//EGL_TEXTURE_FORMAT, EGL_TEXTURE_RGBA,
+		//EGL_TEXTURE_TARGET, EGL_TEXTURE_2D,
+		EGL_NONE
+	};
+
 	EGLint num_configs;
 	if (!eglChooseConfig(display, (config_attr != NULL)? config_attr : default_config_attr, &config, 1, &num_configs)) {
 		printf("eglChooseConfig() failed. \n");
 		return -1;
 	}
 
-	surface = eglCreateWindowSurface(display, config, platform->window, NULL);
+	if (platform != NULL) {
+		surface = eglCreateWindowSurface(display, config, platform->window, NULL);
+	} else {
+		surface = eglCreatePbufferSurface(display, config, default_attrs);
+	}
 	if (surface == EGL_NO_SURFACE) {
 		printf("eglCreateSurface() failed. \n");
 		return -1;
@@ -148,12 +170,18 @@ int init_context(struct ugles2_context* context, struct ugles2_platform* platfor
 	}
 
 	context->display  = display;
+	context->config   = config;
 	context->platform = platform;
 	context->surface  = surface;
 	context->context  = econtext;
 
-	context->width    = platform->width;
-	context->height   = platform->height;
+	EGLint width  = 0;
+	EGLint height = 0;
+	eglQuerySurface(display, surface, EGL_WIDTH , &width);
+	eglQuerySurface(display, surface, EGL_HEIGHT, &height);
+	context->width    = width;
+	context->height   = height;
+	printf("width:%d height:%d\n", width, height);
 
 	return 0;
 }
