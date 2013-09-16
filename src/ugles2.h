@@ -36,8 +36,18 @@ struct ugles2_context {
 
 typedef int (*ugles2_open_platform)(struct ugles2_platform* platform, void* arg);
 
+// attribute
+void* ugles2_create_attr();
+void ugles2_destroy_attr(void* attr);
+int ugles2_attr_set_color_size(void* attr, int red, int green, int blue);
+int ugles2_attr_set_alpha_size(void* attr, int alpha);
+int ugles2_attr_set_depth_size(void* attr, int depth);
+int ugles2_attr_set_pbuffer_size(void* attr, int width, int height);
+int ugles2_attr_set_es_attr(void* attr, EGLint name, EGLint value);
+int ugles2_attr_set_pbuffer_attr(void* attr, EGLint name, EGLint value);
+
 // initialize / finalize
-int  ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_platform, void* open_platform_arg, const GLint config_attr[]);
+int  ugles2_initialize(struct ugles2_context* context, void* attr, ugles2_open_platform open_platform, void* open_platform_arg);
 void ugles2_finalize(struct ugles2_context* context);
 
 // shaders

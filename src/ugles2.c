@@ -25,10 +25,167 @@ struct freetype_context
 };
 #endif
 
-static int init_context(struct ugles2_context* context, struct ugles2_platform* platform, const GLint config_attr[]);
+struct ugles2_attr {
+	EGLint* config;
+	EGLint* pbuffer;
+};
+
+static int init_context(struct ugles2_context* context, struct ugles2_platform* platform, struct ugles2_attr* attr);
 static void close_platform(struct ugles2_platform* platform);
 
-int ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_platform, void* open_platform_arg, const GLint config_attr[])
+void* ugles2_create_attr()
+{
+	struct ugles2_attr* attr = (struct ugles2_attr*)malloc(sizeof(struct ugles2_attr));
+	if (attr == NULL) {
+		return NULL;
+	}
+	memset(attr, 0, sizeof(*attr));
+
+	static EGLint default_attrs[] =
+	{
+		EGL_RED_SIZE, 8, EGL_GREEN_SIZE,8, EGL_BLUE_SIZE, 8,
+		EGL_ALPHA_SIZE, EGL_DONT_CARE,
+		EGL_DEPTH_SIZE, 24,
+		EGL_NONE,
+	};
+
+	attr->config = (GLint*)malloc(sizeof(default_attrs));
+	if (attr->config == NULL) {
+		free(attr);
+		return NULL;
+	}
+	memcpy(attr->config, default_attrs, sizeof(default_attrs));
+
+	static EGLint default_pbuffer_attrs[] =
+	{
+		EGL_NONE,
+	};
+
+	attr->pbuffer = (GLint*)malloc(sizeof(default_pbuffer_attrs));
+	if (attr->pbuffer == NULL) {
+		free(attr->config);
+		free(attr);
+		return NULL;
+	}
+	memcpy(attr->pbuffer, default_pbuffer_attrs, sizeof(default_pbuffer_attrs));
+
+	return attr;
+}
+
+void ugles2_destroy_attr(void* attr)
+{
+	struct ugles2_attr* c = (struct ugles2_attr*)attr;
+	if (c->pbuffer != NULL) {
+		free(c->pbuffer);
+		c->pbuffer = NULL;
+	}
+	if (c->config != NULL) {
+		free(c->config);
+		c->config = NULL;
+	}
+	free(c);
+}
+
+static int assign_attr(EGLint* attr_array, EGLint attr, EGLint value)
+{
+	EGLint* pos = attr_array;
+	while (*pos != EGL_NONE) {
+		if (*pos == attr) {
+			pos[1] = value;
+			return 0;
+		}
+		pos += 2;
+	}
+
+	return -1;
+}
+
+static EGLint* append_attr(EGLint* attr_array, EGLint attr, EGLint value)
+{
+	int len = 0;
+	while (attr_array[len] != EGL_NONE) {
+		len += 2;
+	}
+
+	EGLint* attrs_new = (EGLint*)realloc(attr_array, (len + 2 + 1) * sizeof(EGLint) * 2);
+	if (attrs_new == NULL) {
+		return NULL;
+	}
+
+	attrs_new[len    ] = attr;
+	attrs_new[len + 1] = value;
+	attrs_new[len + 2] = EGL_NONE;
+
+	return attrs_new;
+}
+
+int ugles2_attr_set_config_attr(void* attr, EGLint name, EGLint value)
+{
+	struct ugles2_attr* a = (struct ugles2_attr*)attr;
+	if (assign_attr(a->config, name, value) == 0) {
+		return 0;
+	}
+
+	EGLint* attrs_new = append_attr(a->config, name, value);
+	if (attrs_new != NULL) {
+		a->config = attrs_new;
+		return 0;
+	}
+
+	return -1;
+}
+
+int ugles2_attr_set_pbuffer_attr(void* attr, EGLint name, EGLint value)
+{
+	struct ugles2_attr* a = (struct ugles2_attr*)attr;
+	if (assign_attr(a->pbuffer, name, value) == 0) {
+		return 0;
+	}
+
+	EGLint* attrs_new = append_attr(a->pbuffer, name, value);
+	if (attrs_new != NULL) {
+		a->pbuffer = attrs_new;
+		return 0;
+	}
+
+	return -1;
+}
+
+int ugles2_attr_set_color_size(void* attr, int red, int green, int blue)
+{
+printf("%s(attr:%p, red:%d, green:%d, blue:%d)\n", __func__, attr, red, green, blue);
+	if (   (ugles2_attr_set_config_attr(attr, EGL_RED_SIZE, red) != 0)
+		|| (ugles2_attr_set_config_attr(attr, EGL_GREEN_SIZE, green) != 0)
+		|| (ugles2_attr_set_config_attr(attr, EGL_BLUE_SIZE, blue) != 0)
+	   ) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int ugles2_attr_set_alpha_size(void* attr, int alpha)
+{
+	return ugles2_attr_set_config_attr(attr, EGL_ALPHA_SIZE, alpha);
+}
+
+int ugles2_attr_set_depth_size(void* attr, int depth)
+{
+	return ugles2_attr_set_config_attr(attr, EGL_DEPTH_SIZE, depth);
+}
+
+int ugles2_attr_set_pbuffer_size(void* attr, int width, int height)
+{
+	if (   (ugles2_attr_set_pbuffer_attr(attr, EGL_WIDTH, width) != 0)
+		|| (ugles2_attr_set_pbuffer_attr(attr, EGL_HEIGHT, height) != 0)
+	   ) {
+		return -1;
+	}
+
+	return 0;
+}
+
+int ugles2_initialize(struct ugles2_context* context, void* attr, ugles2_open_platform open_platform, void* open_platform_arg)
 {
 	memset(context, 0, sizeof(struct ugles2_context));
 
@@ -59,13 +216,13 @@ int ugles2_initialize(struct ugles2_context* context, ugles2_open_platform open_
 			return -1;
 		}
 
-		if (init_context(context, platform, config_attr) != 0) {
+		if (init_context(context, platform, attr) != 0) {
 			close_platform(platform);
 			free(platform);
 			return -1;
 		}
 	} else {
-		if (init_context(context, NULL, config_attr) != 0) {
+		if (init_context(context, NULL, attr) != 0) {
 			return -1;
 		}
 	}
@@ -106,8 +263,9 @@ void ugles2_finalize(struct ugles2_context* context)
 #endif
 }
 
-int init_context(struct ugles2_context* context, struct ugles2_platform* platform, const EGLint config_attr[])
+int init_context(struct ugles2_context* context, struct ugles2_platform* platform, struct ugles2_attr* attr)
 {
+printf("%s(context:%p, platform:%p, attr:%p)\n", __func__, context, platform, attr);
 	EGLDisplay display = NULL;
 	EGLConfig  config  = NULL;
 	EGLSurface surface = NULL;
@@ -132,6 +290,13 @@ int init_context(struct ugles2_context* context, struct ugles2_platform* platfor
 		EGL_NONE
 	};
 
+	{
+		int count;
+		for  (count = 0; attr->config[count] != EGL_NONE; count += 2) {
+			printf("  config[% 2d] %d -> %d\n", count, attr->config[count], attr->config[count + 1]);
+		}
+	}
+
 	EGLint default_attrs[] = {
 		EGL_WIDTH, 960,
 		EGL_HEIGHT, 540,
@@ -142,7 +307,7 @@ int init_context(struct ugles2_context* context, struct ugles2_platform* platfor
 	};
 
 	EGLint num_configs;
-	if (!eglChooseConfig(display, (config_attr != NULL)? config_attr : default_config_attr, &config, 1, &num_configs)) {
+	if (!eglChooseConfig(display, (attr != NULL)? attr->config : default_config_attr, &config, 1, &num_configs)) {
 		printf("eglChooseConfig() failed. \n");
 		return -1;
 	}
@@ -150,7 +315,7 @@ int init_context(struct ugles2_context* context, struct ugles2_platform* platfor
 	if (platform != NULL) {
 		surface = eglCreateWindowSurface(display, config, platform->window, NULL);
 	} else {
-		surface = eglCreatePbufferSurface(display, config, default_attrs);
+		surface = eglCreatePbufferSurface(display, config, (attr != NULL)? attr->pbuffer : default_attrs);
 	}
 	if (surface == EGL_NO_SURFACE) {
 		printf("eglCreateSurface() failed. \n");
