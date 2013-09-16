@@ -172,8 +172,9 @@ void init_text(struct ugles2_context* context, struct app_data* app_data, const 
 void init(struct ugles2_context* context, struct app_data* app_data, const char texture_filename[])
 {
 	const char ttf_filename[] = "test.ttf";
-	if (ugles2_set_font(context, ttf_filename) != 0) {
-		printf("ugles2_set_font(context, \"%s\") failed. @%s:%d\n", ttf_filename, __FILE__, __LINE__);
+	int res = ugles2_set_font(context, ttf_filename);
+	if (res != 0) {
+		printf("ugles2_set_font(context, \"%s\") failed -> %d. @%s:%d\n", ttf_filename, res, __FILE__, __LINE__);
 	}
 
 	// gl setting
@@ -261,22 +262,11 @@ void finalize(struct ugles2_context* context, struct app_data* app_data)
 	glDeleteProgram(app_data->shader.program);
 }
 
-static ugles2_open_platform get_open_platform_func(EGLint** config_attr)
+static ugles2_open_platform get_open_platform_func()
 {
 #if defined(MESA_X)
-	if (config_attr != NULL) {
-		*config_attr = NULL;
-	}
 	return ugles2_platform_mesa_x_open;
 #elif defined(RASPBERRYPI)
-	static EGLint attr[] =
-	{
-		EGL_RED_SIZE, 8, EGL_GREEN_SIZE,8, EGL_BLUE_SIZE, 8,
-		EGL_ALPHA_SIZE, 8,
-		EGL_DEPTH_SIZE, 24,
-		EGL_NONE
-	};
-	*config_attr = attr;
 	return ugles2_platform_raspberrypi_open;
 #else
 #error unknown platform
@@ -288,13 +278,15 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "%s started. \n", argv[0]);
 
 	struct ugles2_context context;
-	GLint* config_attr = NULL;
-	ugles2_open_platform open_platform = get_open_platform_func(&config_attr);
+	void* attr = ugles2_create_attr();
+	ugles2_open_platform open_platform = get_open_platform_func();
 
-	if (ugles2_initialize(&context, open_platform, config_attr) != 0) {
+	if (ugles2_initialize(&context, attr, open_platform, NULL) != 0) {
 		printf("ugles2_initialize() failed. \n");
+		ugles2_destroy_attr(attr);
 		return 0;
 	}
+	ugles2_destroy_attr(attr);
 
 	struct app_data app_data;
 	memset(&app_data, 0, sizeof(app_data));
