@@ -916,6 +916,34 @@ int ugles2_set_font(struct ugles2_context* context, const char file[])
 #endif
 }
 
+int ugles2_set_memory_font(struct ugles2_context* context, void* buf, unsigned size)
+{
+#if defined(USE_FREETYPE)
+	if (context->freetype == NULL) {
+		return -1;
+	}
+	struct freetype_context* ft = (struct freetype_context*)context->freetype;
+
+	if (ft->face != NULL) {
+		FT_Done_Face(ft->face);
+		ft->face = NULL;
+	}
+
+	FT_Face face;
+	int res = FT_New_Memory_Face(ft->library, buf, size, 0, &face);
+	if (res == 0) {
+		ft->face = face;
+		return 0;
+	} else if (res == FT_Err_Unknown_File_Format) {
+		return -2;
+	} else {
+		return -3;
+	}
+#else
+	return -1;
+#endif
+}
+
 #if defined(USE_FREETYPE)
 static int draw_text(struct ugles2_context* context
 		, GLubyte pixels[], int width, int height

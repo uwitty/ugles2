@@ -68,6 +68,7 @@ GLuint ugles2_create_texture(const GLubyte* pixels, int width, int height);
 
 // text
 int ugles2_set_font(struct ugles2_context* context, const char file[]);
+int ugles2_set_memory_font(struct ugles2_context* context, void* buf, unsigned size);
 int ugles2_text_size(struct ugles2_context* context, int* width, int* count, const char text[], int font_size);
 int ugles2_draw_text(struct ugles2_context* context, GLubyte* pixels, int width, int height
 					, const char text[], int font_size, GLubyte red, GLubyte green, GLubyte blue, GLubyte alpha
