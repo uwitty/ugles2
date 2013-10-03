@@ -756,6 +756,93 @@ GLuint ugles2_create_texture(const GLubyte pixels[], int width, int height)
 
 
 // =============================================================================
+// dump
+
+int ugles2_dump_png(struct ugles2_context* context, const char filename[])
+{
+#if defined(USE_PNG)
+	FILE* fp = NULL;
+	unsigned char* pixels = NULL;
+	png_structp png_ptr = NULL;
+	png_infop info_ptr = NULL;
+	int res = -2;
+
+	fp = fopen(filename, "wb");
+	if (fp == NULL) {
+		res = -2;
+		goto finish;
+	}
+
+	int width  = context->width;
+	int height = context->height;
+
+	pixels = (unsigned char*)malloc(width*height*4);
+	if (pixels == NULL) {
+		res = -3;
+		goto finish;
+	}
+	memset(pixels, 0, width*height*4);
+	glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+
+	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+	if (png_ptr == NULL) {
+		res = -4;
+		goto finish;
+	}
+	info_ptr = png_create_info_struct(png_ptr);
+	if (info_ptr == NULL) {
+		res = -5;
+		goto finish;
+	}
+
+	png_init_io(png_ptr, fp);
+
+	png_set_IHDR(png_ptr, info_ptr, width, height
+				, 8, PNG_COLOR_TYPE_RGB_ALPHA, PNG_INTERLACE_NONE
+				, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+
+	png_write_info(png_ptr, info_ptr);
+
+	void** rows = malloc(height * sizeof(void*));
+	if (rows == NULL) {
+		res = -6;
+		goto finish;
+	}
+	int i;
+	for (i = 0; i < height; i++) {
+		rows[i] = pixels + width*4*(height - i -1);
+	}
+	png_write_rows(png_ptr, rows, height);
+
+	res = 0;
+
+finish:
+	if (rows != NULL) {
+		free(rows);
+	}
+	if (png_ptr != NULL) {
+		if (info_ptr != NULL) {
+			png_destroy_write_struct(&png_ptr, &info_ptr);
+		} else {
+			png_destroy_write_struct(&png_ptr, NULL);
+		}
+	}
+	if (pixels != NULL) {
+		free(pixels);
+	}
+	if (fp != NULL) {
+		fclose(fp);
+	}
+
+	return res;
+#else
+	return -1;
+#endif
+}
+
+
+
+// =============================================================================
 // text
 
 #if defined(USE_FREETYPE)

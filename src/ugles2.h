@@ -64,7 +64,11 @@ GLuint ugles2_gen_vertex_buffer(GLenum target, void* p, unsigned size, GLenum us
 int ugles2_load_size(int* width, int* height, const char file[]);
 int ugles2_load_pixels(GLubyte* pixels, int width, int height, const char file[]);
 GLuint ugles2_load_texture(const char file[]);
+GLuint ugles2_load_memory_texture(const void* buf, unsigned size);
 GLuint ugles2_create_texture(const GLubyte* pixels, int width, int height);
+
+// dump
+int ugles2_dump_png(struct ugles2_context* context, const char filename[]);
 
 // text
 int ugles2_set_font(struct ugles2_context* context, const char file[]);
