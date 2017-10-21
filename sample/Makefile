@@ -16,7 +16,7 @@ all: mesa_x
 
 mesa_x: $(MESA_SRCS) $(MESA_UGLES2_LIB)
 	cd build-ugles2/host && make all install
-	gcc -DMESA_X $(MESA_SRCS) $(MESA_UGLES2_LIB) -lGLESv2 -lEGL -lpng -ljpeg -L/usr/lib/i386-linux-gnu -lfreetype -lpthread -lm -o $@
+	gcc -DMESA_X $(MESA_SRCS) $(MESA_UGLES2_LIB) -lGLESv2 -lEGL -lX11 -lpng -ljpeg -L/usr/lib/i386-linux-gnu -lfreetype -lpthread -lm -o $@
 
 raspberrypi: $(RASPBERRYPI_SRCS) $(RASPBERRYPI_UGLES2_LIB)
 	cd build-ugles2/raspberrypi && make all install
